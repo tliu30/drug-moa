@@ -32,16 +32,22 @@ def write_mtx(output_fname, mtx, rowname, colname):
 
     return None
 
-def read_mtx(fname, transpose = True, FUNTYPE = float):
+def read_mtx(fname, transpose = True, FUNTYPE = float, rowname = True):
     f = open(fname)
     dialect = csv.Sniffer().sniff( f.readline() ); f.seek(0)
     reader = csv.reader(f, dialect)
 
     colname = reader.next()
-    rowname, mtx = [], []
-    for row in reader:
-        rowname.append(row[0])
-        mtx.append( map(FUNTYPE, row[1:]) )
+    if rowname == True:
+        rowname, mtx = [], []
+        for row in reader:
+            rowname.append(row[0])
+            mtx.append( map(FUNTYPE, row[1:]) )
+    else:
+        rowname = colname
+        mtx     = []
+        for row in reader:
+            mtx.append( map(FUNTYPE, row) )
     mtx = np.matrix(mtx)
 
     if transpose:
@@ -86,7 +92,6 @@ def compute_hgd_sim(sig_mtx, names, dxn = 1):
 
     final_factor = total - sig_sum_mtx - sig_sum_mtx.transpose() + match
 
-    pdb.set_trace()
     ### Factorial calculating time!
     ftotal            = fac(total)
     fsig_sum_mtx      = np.tile(fac(sig_sum), (1, len(names)))
@@ -108,8 +113,14 @@ def compute_hgd_sim(sig_mtx, names, dxn = 1):
     
     return prob
 
+def create_sim_mtx(infname, ofname, (num_top, num_bot), transpose = True):
+    m, rowname, colname = read_mtx(infname, transpose)
+    s = gene_sigs(m, num_top, num_bot)
+    h = compute_hgd_sim(s, rowname)
+
+    hdr = ','.join(rowname)
+    np.savetxt(ofname, h, delimiter = ',', header = hdr)
+    return None
+
 if __name__ == "__main__":
-    m = read_mtx('./test.mtx', transpose = False)
-    s = gene_sigs(m[0], 3, 3)
-    h = compute_hgd_sim(s, m[1])
-    print h
+    create_sim_mtx('test.mtx', 'testhgd.mtx', (3,3), False)
