@@ -8,9 +8,9 @@ var force = d3.layout.force()
     .linkDistance(function(d) {return d.weight * 200;} )
     .size([width, height]);
 
-var svg = d3.select("#graph")
+var svg = d3.select("#graph");
 
-d3.json("./js/ex.json", function(graph) {
+d3.json("./js/randhgd.json", function(graph) {
     force
         .nodes(graph.nodes)
         .links(graph.links)
@@ -23,22 +23,11 @@ d3.json("./js/ex.json", function(graph) {
         .attr("stroke-width", 1)
         .attr("stroke", "#aaa");
 
-    var nodes = svg.selectAll("g.node")
-        .data(graph.nodes)
-
-    var nodeBoxs = nodes.enter().append("g")
-        .attr("class", "node");
-
-    nodeBoxs.append("circle")
+    var nodes = svg.selectAll("circle.node")
+        .data(graph.nodes).enter()
+        .append("circle")
         .attr("r", 8)
         .style("fill", function(d) {return color(d.group); });
-
-    nodeBoxs.append("text")
-        .attr("dx", 9)
-        .style("text-anchor", "start")
-        .style("font-size", "14px")
-        .style("font-color", "#000")
-        .text(function(d) { return d.name; });
 
     console.log(nodes);
 
@@ -48,7 +37,8 @@ d3.json("./js/ex.json", function(graph) {
             .attr("x2", function(d) { return d.target.x; })
             .attr("y2", function(d) { return d.target.y; });
 
-        nodes.attr("transform", function(d) { return "translate(" + [d.x, d.y] + ")"; });
+        nodes.attr("cx", function(d) {return d.x})
+             .attr("cy", function(d) {return d.y});
 
     });
 });
