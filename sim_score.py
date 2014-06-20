@@ -22,6 +22,16 @@ def mean(*nums): # Do i really need this?
 def match(a, b):
     return list(set(a) & set(b))
 
+def rand_mtx(output_fname, dim):
+    f = open(output_fname, 'w')
+    output = csv.writer(f)
+    ouput.writerow( range(dim) )
+    for i in range(dim):
+        output.writerow( [random.random() for j in range(dim)] )
+    f.close()
+
+    return None
+
 def write_mtx(output_fname, mtx, rowname, colname):
     f = open(output_fname, 'w')
     output = csv.writer(f)

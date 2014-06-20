@@ -1,5 +1,18 @@
 from sim_score import read_mtx
+import networkx as nx
 import json
+
+def mtx_to_nx(ifname, cutoff):
+    m, hdr, hdr2 = read_mtx(ifname, transpose = False, rowname = False)
+    g = nx.Graph()
+    for i in range(len(hdr)):
+        g.add_node(hdr[i])
+        for j in range(i+1, len(hdr)):
+            weight = m[i,j]
+            if weight < cutoff: continue
+            else:
+                g.add_edge(hdr[i], hdr[j], weight = m[i,j])
+    return g
 
 def mtx_to_json(ifname, ofname, cutoff):
     def mknode(name):
