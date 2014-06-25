@@ -1,6 +1,23 @@
 import numpy as np
+from mtx import *
 
 from scipy.misc import factorial as fac
+
+################################################
+# Utility function
+# ------------------------------------
+# Utility function for log factorial;
+# requires initializing an array of logs,
+# so that's why it returns a function
+################################################
+
+def mk_log_fac(max_x):
+    # If proves slow, consider writing ufunc in C
+    a = np.log(np.arange(1, max_x + 1) )
+    def log_fac(x):
+        return a[:x].sum()
+    return np.vectorize(log_fac, 1, 1)
+
 #####################################################
 # Initial Processing
 # ------------------
@@ -92,13 +109,73 @@ def compute_hgd_sim(sig_mtx, names, dxn = 1):
     
     return prob
 
+def compute_log_hgd_sim(sig_mtx, names, dxn = 1):
+    """
+    Takes a matrix of signatures and computes the hgd
+    score between each pair (x,y).  The score computes
+    the probability of x & y sharing m matches using the
+    hypergeometric distribution, treating the number of
+    samples as |x| and the number of successes as |y|.
+    The score is symmetric.
+    
+    Outputs square distance matrix.
+    -----------------------------
+    sig_mtx: (n x m) matrix of n tests & m probes/genes 
+             where M[i,j] = -1,0,1 means down/not/up regulated
+    names  : the name associated with each test
+    dxn    : if dxn == 1, match up regulated
+             if dxn == -1, match down regulated
+             else match both up and down reg
+    """
+    if   dxn ==  1: sig_mtx = (sig_mtx ==  1) * 1
+    elif dxn == -1: sig_mtx = (sig_mtx == -1) * 1
+    else:           sig_mtx = np.abs(sig_mtx)
+
+    total        = sig_mtx.shape[1]
+    sig_sum      = sig_mtx.sum(1)
+    tmin_sig_sum = total - sig_sum
+
+    sig_sum_mtx      = np.tile(sig_sum, (1, len(names)))
+    tmin_sig_sum_mtx = np.tile(tmin_sig_sum, (1, len(names))) 
+
+    match           = sig_mtx * sig_mtx.transpose()
+    ssmin_match_row = sig_sum_mtx - match
+    ssmin_match_col = sig_sum_mtx.transpose() - match
+
+    final_factor = total - sig_sum_mtx - sig_sum_mtx.transpose() + match
+
+    log_fac = mk_log_fac(total)
+    ### Factorial calculating time!
+    ftotal            = log_fac(total)
+    fsig_sum_mtx      = np.tile(log_fac(sig_sum), (1, len(names)))
+    ftmin_sig_sum_mtx = np.tile(log_fac(tmin_sig_sum), (1, len(names)))
+    fmatch            = log_fac(match)
+    fssmin_match_row  = log_fac(ssmin_match_row)
+    fssmin_match_col  = log_fac(ssmin_match_col)
+    ffinal_factor     = log_fac(final_factor)
+    
+    log_prob = (fsig_sum_mtx + fsig_sum_mtx.transpose() + ftmin_sig_sum_mtx +
+                ftmin_sig_sum_mtx.transpose() - ftotal - fmatch - 
+                fssmin_match_row - fssmin_match_col - ffinal_factor)
+    
+    prob = np.exp(log_prob)
+
+    return prob
+
+
 def create_hgd_mtx(ifname, ofname, (num_top, num_bot), transpose = True):
-    m, rowname, colname = read_mtx(ifname, transpose)
-    s = gene_sigs(m, num_top, num_bot)
-    h = compute_hgd_sim(s, rowname)
+    m, rowname, colname = read_mtx(ifname, transpose = transpose)
+    s = expr_to_sigs(m, num_top, num_bot)
+#   h = compute_hgd_sim(s, rowname)
+    h = compute_log_hgd_sim(s, rowname)
 
     hdr = ','.join(rowname)
     np.savetxt(ofname, h, delimiter = ',', header = hdr)
     return None
 
-
+if __name__ == "__main__":
+#   m, rowname, colname = read_mtx('./test.mtx', transpose = False)
+#   s = expr_to_sigs(m, 3, 3)
+#   print compute_hgd_sim(s, rowname)
+#   print compute_log_hgd_sim(s, rowname)
+    create_hgd_mtx('../exprsDataConnectAll_thin.txt', '../hgdDataConnectAll_thin.csv', (300,300)) 
