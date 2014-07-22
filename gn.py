@@ -1,101 +1,122 @@
-import networkx as nx
+# 3814 seconds (i.e., 63 min) when run on hgd_thin
+import graph_tool as gt
+import cProfile
+import os
+from graph_tool.centrality import betweenness as gt_bt
+from graph_tool.topology   import label_components as gt_cc
+from graph_tool.topology   import label_out_component as gt_cc_out
+from graph_tool.util       import find_edge
+from mtx import gt_to_json
+from mtx import write_mtx
+import numpy as np
 
-def girvan_newman(g):
-    
-    def get_edges(paths):
-        edges = []
-        for path in paths:
-            edges += zip(path[:-1], path[1:])
-            edges += zip(path[1:] , path[:-1])
-        return set(edges)
+def gn(g, odir, focus = None):
+    """
+    Takes graph and uses Girvan Newman to slowly break graph down.
+    Can operate in faster mode that constrains view to single graph.
+    Creates new output_directory "odir" in which JSON graphs are placed,
+    as well as names of clusters, and index mapping tests to clusters.
+    -----------------------------------------
+    g:     graph_tool graph
+    odir:  output_directory
+    focus: if True, only looks at clusters with vertex named "focus"
+    """
+    ### Pull some properties of the graph out
+    weight = g.ep['weight']
+    name   = g.vp['name']
 
-    def count_nodes(paths):
-        nodes = {}
-        for path in paths:
-            for node in path[1:-1]:
-                nodes[node] = nodes.get(node, 0) + 1
-        return nodes
+    ### If focus, make sure focus actually there!
+    if focus:
+        if focus not in name:
+            raise KeyboardInterrupt
 
-    def update_sp(shortest_path, sigma_per, ebc, edge):
-        to_edit = set()
-        for source in shortest_path:
-            for target in shortest_path[source]:
-                edges = get_edges(shortest_path[source][target])
-                if (source, target) in edges: 
-                    to_edit.add( (source, target) )
+    ### Initialize output
+    if not os.path.exists(odir):
+        os.mkdir(odir)
+    json_name = os.path.join(odir, "%i_%i.json")
+    text_name = os.path.join(odir, "%i_%i.txt")
+    idx_name  = os.path.join(odir, "index.csv")
 
-        for (source, target) in to_edit:
-            old_paths = shortest_path[source][target]
-            new_paths = nx.algorithms.shortest_path(g, source, target)
+    ### Create new property for graph & configure for fast
+    g.ep["ebc"] = g.new_edge_property("float") 
+    g.set_fast_edge_removal(True)
 
-            old_counts = count_nodes(old_paths)
-            new_counts = count_nodes(new_paths)
+    ### Initialize variables for tracking connected components
+    ### and indexing
+    if focus: cc_cts = [g.num_vertices()]
+    else:     cc_cts = [0]
+    index  = dict( [(name[v], [(0,0)]) for v in g.vertices()] ) 
 
-            for node in old_counts:
-                ebc[node] -= sigma_per[node][source][target]
+    ### Begin Girvan Newman algorithm
+    _, _    = gt_bt(g, eprop = g.ep["ebc"], weight = weight, norm = False) 
+    while g.num_edges() != 0:
+        if g.num_edges() % 100 == 0: print g.num_edges() 
+        ### Get & remove edge of max() betweenness; recalc betweenness 
+        maxedge = find_edge(g, g.ep["ebc"], g.ep["ebc"].a.max())[0]
+        g.ep["ebc"] = g.new_edge_property("float")
+        g.remove_edge(maxedge)
+        _, _    = gt_bt(g, eprop = g.ep["ebc"], weight = weight, norm = False)
 
-            for node in new_counts:
-                sigma_per[node][source][target] = counts[node] / len(new_paths)
-                ebc[node] += sigma_per[node][source][target]
+        ### If we're in a focused situation, find relevant cc
+        if focus:
+            cc_lbl = gt_cc_out(g, focus)
+            cc_ct  = cc_lbl.a.sum()
+            g.set_vertex_filter(cc_lbl) # Mask all other edge/verts
 
-            shortest_path[source][target] = new_paths
+            ### If edge removed creates new clusters
+            if cc_ct != cc_cts[-1]: 
+                iter_num = len(cc_cts)
+                cc_cts.append(cc_ct)
 
-        return shortest_path, sigma_per, ebc
-    
-    ccs = nx.algorithms.components.connected_component_subgraphs
+                ### Write sections
+                gt_to_json(g, json_name%(iter_num, 0))
+                out = open(text_name%(i - iter_num, 0), 'w')
+                for v in g.vertices():
+                    if cc_lbl[v]:
+                        out.write(name[v] + '\n')
+                        index[name[v]].append((iter_num, 0))
 
-    def compare(a,b):
-        if len(a) == len(b):
-            return True
- 
-    ### Initialize
-    shortest_path  = nx.algorithms.shortest_path(g)
-    sigma_per, ebc = {}, {} 
-    for u in g.nodes():
-        ebc[u] = 0
-        sigma_per[u] = {}
-        for v in g.nodes():
-            sigma_per[u][v]= {}
-            for w in g.nodes():
-                sigma_per[u][v][w] = 0
-    for source in shorest_path:
-        for target in shortest_path[source]:
-            paths = shortest_path[source][target]
-            counts = count_nodes(paths)
-            for node in counts:
-                sigma_per[node][source][target] = counts[node] / len(paths)
-                ebc[node] += sigma_per[node][source][target]
-    l = [ccs(g)]
+        ### Otherwise...
+        else:
+            ### First, gather connected components
+            cc_lbl, _ = gt_cc(g, directed = False)
+            cc_ct     = cc_lbl.a.max()
+            ### If we've generated new clusters...
+            if cc_ct != cc_cts[-1]:
+                iter_num = len(cc_cts) 
+                cc_cts.append(cc_ct)
 
-    while len(g.edges()) != 0:
-        (v,w) = sorted(ebc.iteritems(),key=lambda x: x[1],reverse=True)[0][0]
-        g.remove_edge(v,w)
-        z = ccs(g)
-        if not compare(z, g[-1]):
-            l.append(z)
-        shortest_path, sigma_per, ebc = sp_update(shortest_path, sigma_per, ebc, (v,w))
+                ### Create a filter for each cc label 
+                filters = dict([(i, g.new_vertex_property("bool")) for i in range(cc_lbl.a.max()+1)])
+                for v in g.vertices():
+                    lbl = cc_lbl[v]
+                    filters[lbl][v] = True
 
-def girvan_newman_2(g):
-    def compare(a,b):
-        if len(a) == len(b):
-            return True
-    ccs = nx.algorithms.components.connected_component_subgraphs
+                for (i, f) in filters.iteritems():
+                    if f.a.sum() == 1:
+                        index[name[v]].append((iter_num,i))
+                        continue
+                    g.set_vertex_filter(f)
+                    gt_to_json(g, json_name%(iter_num, i))
+                    out = open(text_name%(iter_num, i), 'w')
+                    for v in g.vertices():
+                        if f[v]:
+                            out.write(name[v] + '\n')
+                            index[name[v]].append((iter_num,i))
+                    g.set_vertex_filter(None)            
 
-    l = [ccs(g)]
-    while len(g.edges()) != 0:
-        ebc = nx.centrality.edge_betweenness_centrality(g)
-        (v,w) = sorted(ebc.iteritems(),key=lambda x: x[1],reverse=True)[0][0]
-        g.remove_edge(v,w)
-        z = ccs(g)
-        if not compare(z, g[-1]):
-            l.append(z)
-        print len(g.edges())
-    return l
+    ### Final step: break down index into legible file
+    m = np.ones( (len(index), len(cc_cts) ) ) * -1
+    ordered_keys = sorted(index.keys())
+    for (key, i) in zip(ordered_keys, range(len(index))):
+        for (iter_num, clust_num) in index[key]:
+            m[i, iter_num] = clust_num
+    write_mtx(idx_name, m, ordered_keys, range(len(cc_cts))) 
 
-if __name__ == "__main__":
-    from viz import mtx_to_nx
-    g = mtx_to_nx('randhgd.mtx', 0.5)
-    steps = girvan_newman(g)
-    for s in steps:
-        print ' '.join( [len(r.nodes()) for r in s] )
-    
+    return None
+
+if __name__ == '__main__':
+    from mtx import mtx_to_gt
+    g = mtx_to_gt('../hgdDataConnectAll_thin.csv', 0.8)
+    import timeit
+    print timeit.timeit('from __main__ import g, gn; gn(g, "./exprsDataConnectAll_thin")', number = 1)

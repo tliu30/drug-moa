@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src='./js/d3.js' charset="utf-8"></script>
+</head>
+
+<body>
+<svg id="graph"></svg>
+<script>
+var svg = d3.select("#graph")
+        .attr("width", "800px")
+        .attr("height", "400px");
+
+var W   = parseInt(svg.style("width"));
+var H   = parseInt(svg.style("height"));
+var CX  = W / 2; var CY = H / 2;
+
+var CIRC = 10;
+var R    = 20;
+
+function drawCirc(n, r) {
+    for (var i = 0; i < n; i++) {
+        var theta = i * (2 * Math.PI / n);
+        var cx = r * Math.cos(theta);
+        var cy = r * Math.sin(theta);
+        svg.append("circle")
+            .attr("cx", CX + cx)
+            .attr("cy", CY + cy)
+            .attr("r", 3)
+            .attr("color", "#00F");
+    };
+};
+
+drawCirc(50, 100);
+</script>
+</body>
+</html>
