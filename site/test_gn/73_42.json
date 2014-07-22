@@ -1,0 +1,1 @@
+{"nodes": [{"name": "44"}, {"name": "52"}, {"name": "81"}], "links": [{"source": 0, "target": 1, "weight": 0.9127066121953435, "ebc": 1.0}, {"source": 0, "target": 2, "weight": 0.9769988033823181, "ebc": 1.0}, {"source": 1, "target": 2, "weight": 0.97171608532392, "ebc": 1.0}]}

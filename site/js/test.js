@@ -4,20 +4,20 @@ var height = 600;
 var color = d3.scale.category10();
 
 var force = d3.layout.force()
-    .charge(-180)
+    .charge(-3000)
     .linkDistance(function(d) {return d.weight * 200;} )
     .size([width, height]);
 
 var svg = d3.select("#graph")
 
-d3.json("./js/ex.json", function(graph) {
+d3.json("./js/8_0.json", function(graph) {
     force
         .nodes(graph.nodes)
         .links(graph.links)
         .start();
 
     var links = svg.selectAll("line.link")
-        .data(force.links())
+        .data(graph.links)
         .enter().append("line")
         .attr("class", "link")
         .attr("stroke-width", 1)
@@ -39,8 +39,6 @@ d3.json("./js/ex.json", function(graph) {
         .style("font-size", "14px")
         .style("font-color", "#000")
         .text(function(d) { return d.name; });
-
-    console.log(nodes);
 
     force.on("tick", function() {
         links.attr("x1", function(d) { return d.source.x; })

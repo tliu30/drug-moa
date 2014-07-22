@@ -4,6 +4,8 @@ var svg = d3.select("#graph")
     .attr("width", "100%")
     .attr("height", "100%");
 
+d3.select("#nav").style("height", svg.style("height"));
+
 var force = d3.layout.force()
     .charge(-120)
     .linkDistance(200)

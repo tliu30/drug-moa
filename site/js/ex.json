@@ -1,0 +1,1 @@
+{"nodes": [{"name": "Stephanie"}, {"name": "Tony"}, {"name": "Mom"}, {"name": "Dad"}, {"name": "Liu"}, {"name": "floop"}], "links": [{"source": 0, "target": 1, "weight": 1}, {"source": 0, "target": 3, "weight": 0.25}, {"source": 1, "target": 2, "weight": 2}, {"source": 3, "target": 4, "weight": 0.5}]}
