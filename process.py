@@ -2,10 +2,10 @@
 import sys, os
 
 # Calculate similarity scores
-#def similarity_score(ifname, ofname, (num_top, num_bot), method = 'HGD', transpose = True, verbose = True):
-#    if method == 'HGD':
-#        similarity.create_hgd_mtx(ifname, ofname, (num_top, num_bot), transpose, verbose) 
-#    return None
+def similarity_score(ifname, ofname, (num_top, num_bot), method = 'HGD', transpose = True, verbose = True):
+    if method == 'HGD':
+        similarity.create_hgd_mtx(ifname, ofname, (num_top, num_bot), transpose, verbose) 
+    return None
 
 
 # Calculate cluster

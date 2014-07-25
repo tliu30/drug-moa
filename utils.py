@@ -14,14 +14,27 @@ import numpy as np
 # Basic I/O of matrices
 #############################
 
-def read_mtx(fname, FUNTYPE = float, transpose = True, rowname = True):
+def read_mtx(fname, FUNTYPE = float, transpose = True, 
+             colname= True, rowname = True):
+    """
+    Read a csv file into a (np.matrix, rownames, colnames) tuple.
+    ------------------
+    fname     - the name of the input file
+    FUNTYPE   - the type caster of the entries of the matrix
+    transpose - whether or not to transpose the matrix
+    rowname   - whether or not there are rownames 
+    ------------------
+    Output is a (mtx, rownames, colnames) tuple, where matrix
+    is a numpy.matrix, and rownames/colnames are lists of headers.
+    """
     # Open CSV, read format of CSV, wrap CSV with csv.reader
     f = open(fname)
     dialect = csv.Sniffer().sniff( f.readline() ); f.seek(0)
     reader = csv.reader(f, dialect)
 
     # Read csv into an array-of-arrays => np.matrix
-    colname = reader.next()
+    if colname == True: colname = reader.next()
+    else:               colname = None
     if rowname == True:
         rowname, mtx = [], []
         for row in reader:
@@ -43,6 +56,16 @@ def read_mtx(fname, FUNTYPE = float, transpose = True, rowname = True):
     return(mtx, rowname, colname)
 
 def write_mtx(ofname, mtx, rowname = None, colname = None):
+    """
+    Writes a numpy matrix to a CSV file with row and col names.
+    --------------------
+    ofname  - the name of the output file
+    mtx     - a numpy.matrix instance 
+    rowname - a list of rownames
+    colname - a list of column names
+    --------------------
+    Output is None.
+    """
     # Open out-CSV & wrap handler with csv.writer
     f = open(ofname, 'w')
     output = csv.writer(f)
@@ -68,6 +91,11 @@ def rand_mtx(ofname, dim):
     """
     Create a square matrix of dimension 'dim' with random entries
     between 0 and 1.  Writes output to 'ofname'.
+    ----------------
+    ofname - the name of the output file
+    dim    - the dimension; integer
+    ----------------
+    Output is None
     """
     mtx = []
     for i in range(dim):
@@ -81,6 +109,15 @@ def rand_mtx(ofname, dim):
 ############################
 
 def mtx_to_nx(ifname, cutoff):
+    """
+    Convert distance matrix (csv file) to networkx graph.
+    Ignore edges below cutoff.
+    ---------------------
+    ifname - the input file name
+    cutoff - the threshold
+    ---------------------
+    Output is a networkx.Graph instance with approp edges.
+    """
     m, hdr, _ = read_mtx(ifname, transpose = False, rowname = False)
     g = nx.Graph()
     for i in range(len(hdr)):
@@ -93,6 +130,15 @@ def mtx_to_nx(ifname, cutoff):
     return g
 
 def mtx_to_gt(ifname, cutoff):
+    """
+    Convert distance matrix (csv file) to graphtools graph.
+    Ignore edges below cutoff.
+    ---------------------
+    ifname - the input file name
+    cutoff - the threshold
+    ---------------------
+    Output is a graphtools.Graph instance with approp edges.
+    """
     m, hdr, _ = read_mtx(ifname, transpose = False, rowname = False)
     g = gt.Graph(directed = False)
     weight = g.new_edge_property("float")
