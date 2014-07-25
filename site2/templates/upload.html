@@ -1,0 +1,8 @@
+$def with (form)
+
+<script src="static/js/upload.js" type="text/javascript"> </script>
+<form id="upload" method="POST" enctype="multipart/form-data">
+$:form.render()
+<input type="submit" onclick="uploadFile()"/>
+</form>
+<div id="progress"></div>

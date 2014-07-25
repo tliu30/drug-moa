@@ -1,4 +1,3 @@
-# 3814 seconds (i.e., 63 min) when run on hgd_thin
 import graph_tool as gt
 import cProfile
 import os
@@ -10,6 +9,7 @@ from mtx import gt_to_json
 from mtx import write_mtx
 import numpy as np
 
+# 3814 seconds (i.e., 63 min) when run on hgd_thin
 def gn(g, odir, focus = None):
     """
     Takes graph and uses Girvan Newman to slowly break graph down.

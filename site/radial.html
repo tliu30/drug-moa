@@ -7,10 +7,19 @@
 <body>
 <svg id="graph"></svg>
 <script>
-var svg = d3.select("#graph")
-        .attr("width", "800px")
-        .attr("height", "400px");
 
+var W = 800;
+var H = 400;
+
+var CX = W / 2;
+var CY = H / 2;
+
+/*
+var svg = d3.select("#graph")
+        .attr("width", W)
+        .attr("height", H);
+*/
+/*
 var W   = parseInt(svg.style("width"));
 var H   = parseInt(svg.style("height"));
 var CX  = W / 2; var CY = H / 2;
@@ -32,6 +41,7 @@ function drawCirc(n, r) {
 };
 
 drawCirc(50, 100);
+*/
 </script>
 </body>
 </html>

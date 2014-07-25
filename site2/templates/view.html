@@ -1,0 +1,14 @@
+<div id="nav">
+    <p>Database</p>
+    <select id="db" onchange="updateProbeList()"> </select>
+
+    <p>Probe</p>
+    <select id="probe" onchange="updateClustList()"> </select>
+
+    <p>Cluster</p>
+    <select id="clust" onchange="loadGraph()"> </select>
+</div>
+
+<div id="content">
+    <svg id="graph"></svg>
+</div>
