@@ -1,6 +1,6 @@
-import cProfile
 import numpy as np
-from mtx import *
+from utils import *
+from fake_log import *
 
 from scipy.misc import factorial as fac
 
@@ -17,6 +17,8 @@ def mk_log_fac(max_x):
     Creates lookup table for log-factorial of all integers
     less than or equal to max_x.
     """
+    vprint(VERBOSE, 'Setting up log-factorial table for x = [1,%i]'%(max_x))
+
     # If proves slow, consider writing ufunc in C
     a = np.log(np.arange(1, max_x + 1) )
     a = np.concatenate( (np.array([0]), np.add.accumulate(a)) )
@@ -44,6 +46,7 @@ def expr_to_sigs(expr_mtx, num_top, num_bot):
     num_top :  num top reg genes to record
     num_bot :  num bot reg genes to record
     """
+    vprint(VERBOSE, 'Determining up/down regulated genes')
     sig_mtx = []
     for row in expr_mtx:
         bot_bd = np.sort(row)[0,num_bot-1]
@@ -79,9 +82,14 @@ def compute_log_cdf_hgd_sim_1(sig_mtx, names, dxn = 1):
              if dxn == -1, match down regulated
              else match both up and down reg
     """
+    vprint(INFO, 'Computing the the log-HGD score between each probe')
+    vprint(VERBOSE, 'Output: %s, Type: %i'%(sig_mtx, dxn))
+
     if   dxn ==  1: sig_mtx = (sig_mtx ==  1) * 1
     elif dxn == -1: sig_mtx = (sig_mtx == -1) * 1
     else:           sig_mtx = np.abs(sig_mtx)
+
+    vprint(VERBOSE, "Setting up basic sub matrices...")
 
     total        = sig_mtx.shape[1]
     sig_sum      = sig_mtx.sum(1)
@@ -92,6 +100,8 @@ def compute_log_cdf_hgd_sim_1(sig_mtx, names, dxn = 1):
 
     log_fac = mk_log_fac(total)
 
+    vprint(VERBOSE, "Calculate factorial versions...")
+
     ftotal            = log_fac(total)
     fsig_sum_mtx      = np.tile(log_fac(sig_sum), (1, len(names)))
     ftmin_sig_sum_mtx = np.tile(log_fac(tmin_sig_sum), (1, len(names)))
@@ -101,6 +111,7 @@ def compute_log_cdf_hgd_sim_1(sig_mtx, names, dxn = 1):
     ### Now that we've initialized the constants, time
     ### to iterate the stuffs!
 
+    vprint(VERBOSE, "Iterate along number of matches to calculate CDF...")
     ### First, initialize the match values
     # Method 1
     match           = sig_mtx * sig_mtx.transpose()
@@ -120,7 +131,8 @@ def compute_log_cdf_hgd_sim_1(sig_mtx, names, dxn = 1):
         
         prob += np.exp(log_prob)
 
-        print i
+        progress_bar(i, np.triu(match,1).max() + 1, 1)
+    progress_bar_complete(np.triu(match,1).max())
     return prob
 
 def compute_log_cdf_hgd_sim_2(sig_mtx, names, dxn = 1):
@@ -141,10 +153,14 @@ def compute_log_cdf_hgd_sim_2(sig_mtx, names, dxn = 1):
              if dxn == -1, match down regulated
              else match both up and down reg
     """
+    vprint(INFO, 'Computing the the log-HGD score between each probe')
+    vprint(VERBOSE, 'Output: %s, Type: %i'%(sig_mtx, dxn))
+
     if   dxn ==  1: sig_mtx = (sig_mtx ==  1) * 1
     elif dxn == -1: sig_mtx = (sig_mtx == -1) * 1
     else:           sig_mtx = np.abs(sig_mtx)
 
+    vprint(VERBOSE, 'Setting up basic sub matrices...')
     total        = sig_mtx.shape[1]
     sig_sum      = sig_mtx.sum(1)
     tmin_sig_sum = total - sig_sum
@@ -154,6 +170,7 @@ def compute_log_cdf_hgd_sim_2(sig_mtx, names, dxn = 1):
 
     log_fac = mk_log_fac(total)
 
+    vprint(VERBOSE, 'Calculate factorial versions...')
     ftotal            = log_fac(total)
     fsig_sum_mtx      = np.tile(log_fac(sig_sum), (1, len(names)))
     ftmin_sig_sum_mtx = np.tile(log_fac(tmin_sig_sum), (1, len(names)))
@@ -163,6 +180,7 @@ def compute_log_cdf_hgd_sim_2(sig_mtx, names, dxn = 1):
     ### Now that we've initialized the constants, time
     ### to iterate the stuffs!
 
+    vprint(VERBOSE, "Iterate along number of matches to calculate CDF...")
     # Method 2
     match           = sig_mtx * sig_mtx.transpose()
     ssmin_match_row = sig_sum_mtx - match
@@ -185,17 +203,19 @@ def compute_log_cdf_hgd_sim_2(sig_mtx, names, dxn = 1):
         fssmin_match_col += np.log(ssmin_match_col + i + 1)
         ffinal_factor    -= np.log(final_factor - i)
 
-        print i
+        progress_bar(i, np.triu(match,1).max()+1, 1)
+    progress_bar_complete(np.triu(match,1).max()+1)
     return prob
 
 
 def create_hgd_mtx(ifname, ofname, (num_top, num_bot), transpose = True):
+    vprint(INFO, "Compute HGDsim matrix from raw_espression data")
+    vprint(INFO, "Infile: %s, Outfile: %s"%(ifname, ofname))
     m, rowname, colname = read_mtx(ifname, transpose = transpose)
     s = expr_to_sigs(m, num_top, num_bot)
-#   h = compute_hgd_sim(s, rowname)
-    h = compute_log_hgd_sim(s, rowname)
+    h = compute_log_hgd_sim_2(s, rowname)
     hdr = ','.join(rowname)
-    np.savetxt(ofname, h, delimiter = ',', header = hdr)
+    np.savetxt(ofname, np.exp(h), delimiter = ',', header = hdr)
     return None
 
 if __name__ == "__main__":

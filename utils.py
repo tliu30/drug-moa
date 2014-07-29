@@ -15,6 +15,8 @@ import numpy as np
 #############################
 
 def read_mtx(fname, FUNTYPE = float, transpose = True, rowname = True):
+    vprint(INFO, 'Reading in %s as a numpy matrix (tranpose: %r)...'%(fname, transpose))
+
     # Open CSV, read format of CSV, wrap CSV with csv.reader
     f = open(fname)
     dialect = csv.Sniffer().sniff( f.readline() ); f.seek(0)
@@ -43,6 +45,7 @@ def read_mtx(fname, FUNTYPE = float, transpose = True, rowname = True):
     return(mtx, rowname, colname)
 
 def write_mtx(ofname, mtx, rowname = None, colname = None):
+    vprint(INFO, "Writing matrix to %s..."%(ofname))
     # Open out-CSV & wrap handler with csv.writer
     f = open(ofname, 'w')
     output = csv.writer(f)
@@ -81,6 +84,7 @@ def rand_mtx(ofname, dim):
 ############################
 
 def mtx_to_nx(ifname, cutoff):
+    vprint(INFO, "Opening %s as networkx object (thresh at %.2f)..."%(ifname, cutoff))
     m, hdr, _ = read_mtx(ifname, transpose = False, rowname = False)
     g = nx.Graph()
     for i in range(len(hdr)):
@@ -93,6 +97,7 @@ def mtx_to_nx(ifname, cutoff):
     return g
 
 def mtx_to_gt(ifname, cutoff):
+    vprint(INFO, "Opening %s as graph tool object (thresh at %.2f)..."%(ifname, cutoff))
     m, hdr, _ = read_mtx(ifname, transpose = False, rowname = False)
     g = gt.Graph(directed = False)
     weight = g.new_edge_property("float")
@@ -119,6 +124,7 @@ def mtx_to_gt(ifname, cutoff):
 #########################
 
 def mtx_to_json(ifname, ofname, cutoff):
+    vprint(INFO, "Convert CSV to JSON; in = %s, out = %s"%(ifname, ofname))
     def mknode(name):
         node = {'name': name}
         return node
@@ -144,6 +150,7 @@ def mtx_to_json(ifname, ofname, cutoff):
     return None
 
 def nx_to_json(graph, ofname):
+    vprint(INFO, "Convert graph to JSON at %s"%(ofname))
     def mknode(name):
         node = {'name': name}
         return node
@@ -165,6 +172,7 @@ def nx_to_json(graph, ofname):
     return None
 
 def gt_to_json(graph, ofname):
+    vprint(INFO, "Convert graph to JSON at %s"%(ofname))
     def mknode(v, name_dic = graph.vertex_properties['name']):
         node = {'name': name_dic[v]}
         return node
