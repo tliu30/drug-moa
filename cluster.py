@@ -78,7 +78,6 @@ def gn(g, odir, focus = None):
     ### Begin Girvan Newman algorithm
     _, _    = gt_bt(g, eprop = g.ep["ebc"], weight = weight, norm = False) 
     while g.num_edges() != 0:
-        if g.num_edges() % 100 == 0: print g.num_edges() 
         ### Get & remove edge of max() betweenness; recalc betweenness 
         maxedge = find_edge(g, g.ep["ebc"], g.ep["ebc"].a.max())[0]
         g.ep["ebc"] = g.new_edge_property("float")
@@ -134,7 +133,7 @@ def gn(g, odir, focus = None):
                     g.set_vertex_filter(None)            
 
         # Progress bar
-        progress_bar(g.num_edges(), total_edges, 100)
+        progress_bar(total_edges - g.num_edges(), total_edges, 100)
 
     ### Final step: break down index into legible file
     progress_bar_complete(total_edges)
@@ -207,7 +206,7 @@ def gn(g, odir, focus = None):
     #"""
     #db = DBSCAN(eps = eps, min_samples = min_samples, **kwargs).fit(x)
     #labels = db.labels_
-    return labels
+    #return labels
 
 if __name__ == '__main__':
     from mtx import mtx_to_gt

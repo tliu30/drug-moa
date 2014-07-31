@@ -10,17 +10,14 @@ import networkx as nx
 import graph_tool as gt
 import numpy as np
 
+from fake_log import *
+
 #############################
 # Basic I/O of matrices
 #############################
 
-<<<<<<< HEAD
-def read_mtx(fname, FUNTYPE = float, transpose = True, rowname = True):
-    vprint(INFO, 'Reading in %s as a numpy matrix (tranpose: %r)...'%(fname, transpose))
-
-=======
-def read_mtx(fname, FUNTYPE = float, transpose = True, 
-             colname= True, rowname = True):
+def read_mtx(fname, FUNTYPE = float, transpose = True, rowname = True,
+             colname = True):
     """
     Read a csv file into a (np.matrix, rownames, colnames) tuple.
     ------------------
@@ -32,15 +29,17 @@ def read_mtx(fname, FUNTYPE = float, transpose = True,
     Output is a (mtx, rownames, colnames) tuple, where matrix
     is a numpy.matrix, and rownames/colnames are lists of headers.
     """
->>>>>>> 6c64ef6abdc653192932b3cd6e5a2f2cdb025cd8
+    vprint(INFO, 'Reading in %s as a numpy matrix (tranpose: %r)...'%(fname, transpose))
     # Open CSV, read format of CSV, wrap CSV with csv.reader
     f = open(fname)
     dialect = csv.Sniffer().sniff( f.readline() ); f.seek(0)
     reader = csv.reader(f, dialect)
 
     # Read csv into an array-of-arrays => np.matrix
-    if colname == True: colname = reader.next()
-    else:               colname = None
+    if colname == True: 
+        colname = reader.next()
+        if rowname == True: colname = colname[1:]
+    else: colname = None
     if rowname == True:
         rowname, mtx = [], []
         for row in reader:
@@ -62,9 +61,6 @@ def read_mtx(fname, FUNTYPE = float, transpose = True,
     return(mtx, rowname, colname)
 
 def write_mtx(ofname, mtx, rowname = None, colname = None):
-<<<<<<< HEAD
-    vprint(INFO, "Writing matrix to %s..."%(ofname))
-=======
     """
     Writes a numpy matrix to a CSV file with row and col names.
     --------------------
@@ -75,17 +71,18 @@ def write_mtx(ofname, mtx, rowname = None, colname = None):
     --------------------
     Output is None.
     """
->>>>>>> 6c64ef6abdc653192932b3cd6e5a2f2cdb025cd8
+    vprint(INFO, "Writing matrix to %s..."%(ofname))
     # Open out-CSV & wrap handler with csv.writer
     f = open(ofname, 'w')
     output = csv.writer(f)
 
     # Write rows
     if colname: 
+        if rowname: colname = [' '] + colname
         output.writerow(colname)
     if rowname:
         for (cmpd, data) in zip(rowname, mtx.tolist()):
-            output.writerow( list(cmpd) + data )
+            output.writerow( [cmpd] + data )
     else:
         for data in mtx.tolist():
             output.writerow(data)
@@ -107,11 +104,12 @@ def rand_mtx(ofname, dim):
     ----------------
     Output is None
     """
+    vprint(INFO, "Creating %i-by-%i matrix with Unif(0,1) random entries..."%(dim,dim))
     mtx = []
     for i in range(dim):
         mtx.append( [random.random() for j in range(dim)] )
     mtx = np.matrix(mtx)
-    write_mtx(ofname, mtx, colname = range(dim))
+    write_mtx(ofname, mtx, colname = range(dim), rowname = range(dim))
     return None
 
 ############################
@@ -119,9 +117,6 @@ def rand_mtx(ofname, dim):
 ############################
 
 def mtx_to_nx(ifname, cutoff):
-<<<<<<< HEAD
-    vprint(INFO, "Opening %s as networkx object (thresh at %.2f)..."%(ifname, cutoff))
-=======
     """
     Convert distance matrix (csv file) to networkx graph.
     Ignore edges below cutoff.
@@ -131,7 +126,7 @@ def mtx_to_nx(ifname, cutoff):
     ---------------------
     Output is a networkx.Graph instance with approp edges.
     """
->>>>>>> 6c64ef6abdc653192932b3cd6e5a2f2cdb025cd8
+    vprint(INFO, "Opening %s as networkx object (thresh at %.2f)..."%(ifname, cutoff))
     m, hdr, _ = read_mtx(ifname, transpose = False, rowname = False)
     g = nx.Graph()
     for i in range(len(hdr)):
@@ -144,9 +139,6 @@ def mtx_to_nx(ifname, cutoff):
     return g
 
 def mtx_to_gt(ifname, cutoff):
-<<<<<<< HEAD
-    vprint(INFO, "Opening %s as graph tool object (thresh at %.2f)..."%(ifname, cutoff))
-=======
     """
     Convert distance matrix (csv file) to graphtools graph.
     Ignore edges below cutoff.
@@ -156,7 +148,7 @@ def mtx_to_gt(ifname, cutoff):
     ---------------------
     Output is a graphtools.Graph instance with approp edges.
     """
->>>>>>> 6c64ef6abdc653192932b3cd6e5a2f2cdb025cd8
+    vprint(INFO, "Opening %s as graph tool object (thresh at %.2f)..."%(ifname, cutoff))
     m, hdr, _ = read_mtx(ifname, transpose = False, rowname = False)
     g = gt.Graph(directed = False)
     weight = g.new_edge_property("float")
@@ -183,7 +175,7 @@ def mtx_to_gt(ifname, cutoff):
 #########################
 
 def mtx_to_json(ifname, ofname, cutoff):
-    vprint(INFO, "Convert CSV to JSON; in = %s, out = %s"%(ifname, ofname))
+    vprint(VERBOSE, "Convert CSV to JSON; in = %s, out = %s"%(ifname, ofname))
     def mknode(name):
         node = {'name': name}
         return node
@@ -209,7 +201,7 @@ def mtx_to_json(ifname, ofname, cutoff):
     return None
 
 def nx_to_json(graph, ofname):
-    vprint(INFO, "Convert graph to JSON at %s"%(ofname))
+    vprint(VERBOSE, "Convert graph to JSON at %s"%(ofname))
     def mknode(name):
         node = {'name': name}
         return node
@@ -231,7 +223,7 @@ def nx_to_json(graph, ofname):
     return None
 
 def gt_to_json(graph, ofname):
-    vprint(INFO, "Convert graph to JSON at %s"%(ofname))
+    vprint(VERBOSE, "Convert graph to JSON at %s"%(ofname))
     def mknode(v, name_dic = graph.vertex_properties['name']):
         node = {'name': name_dic[v]}
         return node
@@ -250,3 +242,6 @@ def gt_to_json(graph, ofname):
     json_fmt = json.dumps(graph)
     open(ofname, 'w').write(json_fmt)
     return None
+
+if __name__ == "__main__":
+    rand_mtx('test.mtx', 100)

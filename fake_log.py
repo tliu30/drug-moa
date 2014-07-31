@@ -1,16 +1,16 @@
 import sys
 
-GLOBAL_VERBOSE_FLAG = False
+SUPPRESSED = 0
+INFO = 1
+VERBOSE = 2
+
+GLOBAL_VERBOSE_LEVEL = INFO
 
 # Short for verbose-print
 def vprint(level, *args):
     out = ''.join([str(x) for x in args])
-    if level == 0:
+    if level <= GLOBAL_VERBOSE_LEVEL :
         print out
-    elif level == 1:
-        if GLOBAL_VERBOSE_FLAG:
-            print out
-        else: pass
     else: pass
     return None
 
@@ -28,3 +28,20 @@ def progress_bar_complete(total):
     prog = '100%% (%i/%i)'%(total, total)
     sys.stdout.write('\r' + bar + ' ' + prog + '\n')
     sys.stdout.flush()
+
+# Some test
+if __name__ == '__main__':
+    print("FIRST, SET VPRINT LEVEL TO SUPPRESSED")
+    GLOBAL_VERBOSE_LEVEL = SUPPRESSED
+    vprint(INFO, "This is info")
+    vprint(VERBOSE, "This is verbose")
+
+    print("FIRST, SET VPRINT LEVEL TO INFO")
+    GLOBAL_VERBOSE_LEVEL = INFO
+    vprint(INFO, "This is info")
+    vprint(VERBOSE, "This is verbose")
+
+    print("FIRST, SET VPRINT LEVEL TO VERBOSE")
+    GLOBAL_VERBOSE_LEVEL = VERBOSE
+    vprint(INFO, "This is info")
+    vprint(VERBOSE, "This is verbose")
