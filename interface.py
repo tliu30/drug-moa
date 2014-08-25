@@ -1,20 +1,21 @@
-expression_matrix (+ existing) -> HGD_sim
-expression_matrix (+ exiting) -> sig files (I THINK THIS IS WASTEFUL)
-list_of_sigs (+ existing) -> HGD_sim
-
-HGD_sim -> GN
-
-View GN
-
-------------
-
-What for HGD_SIM output?
-
-HGD_UP
-HGD_DOWN
-HGD_AVERAGE
-MASTER_LIST
-SIG_MTX
+#########################################################
+#expression_matrix (+ existing) -> HGD_sim
+#expression_matrix (+ exiting) -> sig files (I THINK THIS IS WASTEFUL)
+#list_of_sigs (+ existing) -> HGD_sim
+#
+#HGD_sim -> GN
+#
+#View GN
+#
+#------------
+#
+#What for HGD_SIM output?
+#
+#HGD_UP
+#HGD_DOWN
+#HGD_AVERAGE
+#MASTER_LIST
+#SIG_MTX
 
 def create_hgd_from_expr(odir, ifname, transpose, num_top, num_bot):
     """
