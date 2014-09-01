@@ -114,27 +114,27 @@ def cross_hgd(mtx_a, names_a, mtx_b, names_b, dxn = 1):
     total        = mtx_a.shape[1]
 
     sum_a = mtx_a.sum(1)
-    sum_b = mtx_b.sum(1)
+    sum_b = mtx_b.sum(1).transpose()
 
     tmin_sum_a = total - sum_a
     tmin_sum_b = total - sum_b
 
-    sum_mtx_a = np.tile(sum_a, (1, len(names_a)))
-    sum_mtx_b = np.tile(sum_b, (1, len(names_b)))
+    sum_mtx_a = np.tile(sum_a, (1, len(names_b)))
+    sum_mtx_b = np.tile(sum_b, (len(names_a), 1))
 
-    tmin_sum_mtx_a = np.tile(tmin_sum_a, (1, len(names_a))
-    tmin_sum_mtx_b = np.tile(tmin_sum_b, (1, len(names_b))
+    tmin_sum_mtx_a = np.tile(tmin_sum_a, (1, len(names_b)))
+    tmin_sum_mtx_b = np.tile(tmin_sum_b, (len(names_a), 1))
 
     log_fac = mk_log_fac(total)
 
     vprint(VERBOSE, 'Calculate factorial versions...')
     ftotal            = log_fac(total)
 
-    fsum_mtx_a = np.tile(log_fac(sum_a), (1, len(names_a)))
-    fsum_mtx_b = np.tile(log_fac(sum_b), (1, len(names_b)))
+    fsum_mtx_a = np.tile(log_fac(sum_a), (1, len(names_b)))
+    fsum_mtx_b = np.tile(log_fac(sum_b), (len(names_a), 1))
 
-    ftmin_sum_mtx_a = np.tile(log_fac(tmin_sum_a), (1, len(names_a)))
-    ftmin_sum_mtx_b = np.tile(log_fac(tmin_sum_b), (1, len(names_b)))
+    ftmin_sum_mtx_a = np.tile(log_fac(tmin_sum_a), (1, len(names_b)))
+    ftmin_sum_mtx_b = np.tile(log_fac(tmin_sum_b), (len(names_a), 1))
 
     prob = np.zeros(fsum_mtx_a.shape)
 
@@ -154,8 +154,8 @@ def cross_hgd(mtx_a, names_a, mtx_b, names_b, dxn = 1):
     ffinal_factor     = log_fac(final_factor)
 
     for i in range(np.triu(match, 1).max()+1):
-        log_prob = (fnew_sum_mtx + fold_sum_mtx + ftmin_new_sum_mtx +
-                    ftmin_old_sum_mtx - ftotal - fmatch - 
+        log_prob = (fsum_mtx_a + fsum_mtx_b + ftmin_sum_mtx_a +
+                    ftmin_sum_mtx_b - ftotal - fmatch - 
                     fssmin_match_row - fssmin_match_col - ffinal_factor)
         
         prob += np.exp(log_prob)
@@ -169,6 +169,8 @@ def cross_hgd(mtx_a, names_a, mtx_b, names_b, dxn = 1):
         _ssmin_match_row = ssmin_match_row + i + 1
         _ssmin_match_col = ssmin_match_col + i + 1
         _final_factor    = final_factor - i
+        
+        impt_indices = (_match <= 0)
 
         # Clip non-positive values...
         _match[_match <= 0] = 1
@@ -182,6 +184,8 @@ def cross_hgd(mtx_a, names_a, mtx_b, names_b, dxn = 1):
         fssmin_match_row += np.log(_ssmin_match_row)
         fssmin_match_col += np.log(_ssmin_match_col)
         ffinal_factor    -= np.log(_final_factor)
+
+        fmatch[impt_indices] = np.inf
 
         progress_bar(i, np.triu(match,1).max()+1, 1)
     progress_bar_complete(np.triu(match,1).max()+1)
@@ -222,3 +226,9 @@ def augment_hgd(new_sigs, new_names, old_sigs, old_names, old_hgd, dxn = 1):
     total_m[old_dim:, old_dim:] = new_hgd
 
     return total_m
+
+if __name__ == '__main__':
+    from utils import read_mtx
+    sig_mtx, testnames, rownames = read_mtx('./test/main/sig_mtx.csv', transpose = False, rowname = True, colname = True)
+    up_hgd_mtx = self_hgd(sig_mtx, testnames, 1)
+    down_hgd_mtx = self_hgd(sig_mtx, testnames, -1)
