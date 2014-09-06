@@ -1,0 +1,1 @@
+{"nodes": [{"name": "cyu"}, {"name": "jsfuctw"}, {"name": "ucqww"}], "links": [{"source": "cyu", "target": "jsfuctw", "weight": 0.9426358099685282, "ebc": 2.0}, {"source": "jsfuctw", "target": "ucqww", "weight": 0.9507069512117757, "ebc": 2.0}]}

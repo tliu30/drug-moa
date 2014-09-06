@@ -149,7 +149,7 @@ def mtx_to_gt(ifname, cutoff):
     Output is a graphtools.Graph instance with approp edges.
     """
     vprint(INFO, "Opening %s as graph tool object (thresh at %.2f)..."%(ifname, cutoff))
-    m, hdr, _ = read_mtx(ifname, transpose = False, rowname = False)
+    m, hdr, _ = read_mtx(ifname, transpose = False, rowname = True, colname = True)
     g = gt.Graph(directed = False)
     weight = g.new_edge_property("float")
     name   = g.new_vertex_property("string")

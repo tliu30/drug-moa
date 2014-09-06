@@ -1,0 +1,23 @@
+div#titlecard {
+    height:        84px;
+    width:         100%;
+    border-bottom: 1px solid #CCC;
+}
+
+div#bottom-half{
+    width:  100%;
+    min-height: 600px;
+}
+
+div#nav {
+    width:        180px;
+    border-right: 1px solid #CCC;
+    float: left;
+}
+
+div#content{
+    overflow: auto;
+}
+svg#graph {
+    padding: 5px;
+}

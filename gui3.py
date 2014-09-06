@@ -61,6 +61,19 @@ class BaseDialog(tkSimpleDialog.Dialog):
         self.old_l, self.old_e, self.old_b = _make_entry_field(
             master, "Old Directory", "Choose dir...", self._choose_dir)
 
+        # Find similarity matrix
+        self.sim_l, self.sim_e, self.sim_b = _make_entry_field(
+            master, "Similarity Matrix", "Choose file...", self._choose_file)
+
+        # Cutoff
+        self.cutoff_l = Label(master, text = "Cutoff")
+        self.cutoff_e = Entry(master)
+
+        # Focus
+        self.focus_val = IntVar(); self.focus_val.set(0)
+        self.focus_chk = Checkbutton(master, text = "Focus", var = self.focus_val, command = self.off_entry)
+        self.focus_e = Entry(master, state = DISABLED)
+
         self.construct()
 
     # Create dialogues for locating files / directories
@@ -102,6 +115,11 @@ class BaseDialog(tkSimpleDialog.Dialog):
     # Aux function for self.create_chk
     
     def clear(self): self.plist_e.delete(0, END)
+
+    def off_entry(self):
+        if self.focus_val.get() == 0:
+            self.focus_e.config(state = DISABLED)
+        else: self.focus_e.config(state = NORMAL)
 
     # Apply the stuff
 
@@ -178,7 +196,20 @@ class BaseDialog(tkSimpleDialog.Dialog):
             tkMessageBox.showwarning("Invalid Input", "Chosen director does not hold similarity data.")
             raise OSError
         else: pass
-        
+     
+    def validate_cutoff(self):
+        if float(self.cutoff_e.get()) >= 1:
+            tkMessageBox.showwarning("Invalid Input", "Cutoff value needs to be [0,1)")
+            raise OSError
+        else: pass
+
+    def validate_focus(self):
+        _, names, _ = read_mtx(self.sim_e.get(), transpose = False)
+        if self.focus_e.get() in names: pass
+        else:
+            tkMessageBox.showwarning("Invalid Input", "Chosen focus not in similarity matrix.")
+            raise OSError
+               
     def validate(self):
         return 1
 
@@ -292,6 +323,60 @@ class AddSigs(BaseDialog):
 
         self.marked = zip(names, items, funcs)
 
+class AnalyzeNet(BaseDialog):
+
+    def construct(self):
+        _grid_row(0, [0,1,3], [self.odir_l, self.odir_e, self.odir_b], [1,2,2], [W, W+E, W+E])
+        _grid_row(1, [0,1,3], [self.sim_l, self.sim_e, self.sim_b], [1,2,2], [W, W+E, W+E] )
+        _grid_row(2, [0,1,2,3], [self.cutoff_l, self.cutoff_e, self.focus_chk, self.focus_e], [1,1,1,1], [W, W+E, W, W+E])
+
+        self.odir_e.insert(0, '/home/anthony/Documents/Projects/drug_moa/test2/gn_focus/')
+        self.sim_e.insert(0, '/home/anthony/Documents/Projects/drug_moa/test2/main/HGD_AVG.csv')
+        self.cutoff_e.insert(0, '0.9')
+
+    def validate(self):
+        try:
+            self.validate_path(self.odir_e.get(), "The directory %s was not found!"%(self.odir_e.get()), os.path.exists) 
+            self.validate_path(self.sim_e.get(), "The file %s was not found!"%(self.sim_e.get()), os.path.exists)
+            self.validate_cutoff()
+            if self.focus_val.get():
+                self.validate_focus()
+            return 1
+        except OSError:
+            return 0
+
+
+    def mark(self):
+        def FUN(x):
+            if self.focus_val.get():
+                if x == '': return None
+                else: return x
+            else: return None
+        names = ['odir', 'ifname', 'cutoff', 'focus']
+        items = [self.odir_e, self.sim_e, self.cutoff_e, self.focus_e]
+        funcs = [str, str, float, FUN]
+
+        self.marked = zip(names, items, funcs)
+
+class ViewNet(BaseDialog):
+
+    def construct(self):
+        _grid_row(0, [0,1,3], [self.odir_l, self.odir_e, self.odir_b], [1,2,2], [W, W+E, W+E])
+
+    def validate(self):
+        try:
+            self.validate_path(self.odir_e.get(), "The directory %s was not found!"%(self.odir_e.get()), os.path.exists)
+            return 1
+        except OSError:
+            return 0
+
+    def mark(self):
+        names = ['idir']
+        items = [self.odir_e]
+        funcs = [str]
+
+        self.marked = zip(names, items, funcs)
+
 class MainDialog(tkSimpleDialog.Dialog):
 
     def body(self, master):
@@ -341,10 +426,9 @@ class MainDialog(tkSimpleDialog.Dialog):
 
     def f4(self): self._f(AddSigs, "Augment Similarity Matrix from Signature Files", interface.add_hgd_from_sigs)()
 
-    def f5(self): self._f(AnalyzeNet, "Find Clusters", interface.add_hgd_from_sigs)()
+    def f5(self): self._f(AnalyzeNet, "Find Clusters", interface.gn_go)()
 
-    def f6(self): pass
-        #os.system('./ex.sh ' + query)
+    def f6(self): self._f(ViewNet, "View Network", interface.view_gn)()
     
 if __name__ == '__main__':
     root = Tk()

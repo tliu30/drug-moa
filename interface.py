@@ -22,6 +22,17 @@ from similarity2 import *
 from numpy import vstack
 import itertools
 import os
+from cluster import gn
+from to_source import *
+
+def gn_go(ifname, odir, cutoff, focus = None):
+    g = mtx_to_gt(ifname, cutoff)
+    gn(g, odir, focus)
+    to_source(odir)
+    copy_view(odir, './output/html/view.html')
+
+def view_gn(idir):
+    os.system('./ex.sh ' +  idir)
 
 def create_hgd_from_expr(odir, ifname, transpose, num_top, num_bot):
     """
